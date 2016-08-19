@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description"
+          content="I'm a freelance web developer and system architect. I work in agile or scrum teams as a software developer or as a coach or team lead.">
+    <meta name="author" content="Steven Teerlinck">
+    <link rel="icon" href="./favicon.ico">
+
+    <title>Steven Teerlinck - freelance web developer and system architect</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/theme.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Teerlinck Steven </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#">Home</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#clients">Clients</a></li>
+                <li><a href="#technologies">Technologies</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="container" role="main">
+
+    <div class="row">
+
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1>Mocking Time
+                    <small>Writing tests that rely on the now</small>
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+
+        <div class="col-md-9">
+
+            <p class="lead">
+                When writing good and meaningful unit tests, we often run against a recurring problem: testing that
+                something has happened on a specific time or that the current time was recorded correctly. This often
+                leads to unit tests being time dependent, which can lead to a number of problems: the expected test
+                result varies according to exact moment the test is being executed on. Also the given and expected time
+                might show a minor (one or more milliseconds) difference due to test execution time.
+            </p>
+
+        </div>
+
+        <div class="col-md-3">
+            <img src="https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg" class="thumbnail"
+                 width="100%">
+            <span class="text-muted">&copy; Salvador Dali - Persistence of Memory</span>
+        </div>
+
+        <div class="col-md-12">
+
+            <p>
+                Imagine that we have a command handler service <code>MarkInvoiceAsPayedCommandHandler</code> (see <a
+                    href="https://en.wikipedia.org/wiki/Command_pattern">Command Pattern</a> for more information on the
+                Command design pattern and command handlers) which marks an invoice as payed and registers the time
+                at which the given invoice was payed. The command handler could look like this in PHP:
+            </p>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+class MarkInvoiceAsPayedCommandHandler implements CommandHandler
+{
+    private $invoiceRepository;
+
+    public function __construct(InvoiceRepository $invoiceRepository)
+    {
+        $this->invoiceRepository = $invoiceRepository;
+    }
+
+    public function handle(MarkInvoiceAsPayed $command)
+    {
+        $invoice = $this->invoiceRepository->find($command->getInvoiceId());
+        $invoice->markAsPayed(new DateTimeImmutable('now'));
+    }
+
+}
+</pre>
+                </div>
+            </div>
+
+            <p>We could test this service / unit by mocking a <code>MarkInvoiceAsPayed</code> command and
+                asserting that the time being stored in the invoice entity equals 'now'. The drawbacks to this approach
+                are:
+            </p>
+            <ol>
+                <li>The expected test result needs to be generated with PHP as it changes depending on the time of
+                    execution of the test.
+                </li>
+                <li>The generated expected test result may differ from the actual time being recorded due to test
+                    execution duration.
+                </li>
+            </ol>
+
+            <h3>Time as a service </h3>
+
+            <p>
+                An elegant and clean solution to this problem can be found in thinking of time as a service deliverable.
+                And what provides time in our world ? Right: clocks. A Clock can be a service which we can inject and
+                consult to provide ous with the current time - or any given time that we mock for testing puposes.
+            </p>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+
+<pre>
+interface Clock {
+
+    public function getCurrentDateTime(): DateTimeInterface;
+
+}
+</pre>
+
+                </div>
+            </div>
+            <p>Which we can implement as a <code>SystemClock</code> which provides the current (server) time:</p>
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+class SystemClock implements Clock {
+
+    public function getCurrentDateTime(): DateTimeInterface
+    {
+        return new DateTimeImmutable('now');
+    }
+
+}
+</pre>
+                </div>
+            </div>
+
+            <p>But also as a <code>FrozenClock</code> which we can use to mock a certain moment in time for testing
+                purposes:</p>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+class FrozenClock implements Clock {
+
+    private $frozenOn;
+
+    public function __construct(DateTimeInterface $frozenOn)
+    {
+        $this->frozenOn = $frozenOn
+    }
+
+    public function getCurrentDateTime(): DateTimeInterface
+    {
+        return $this->frozenOn;
+    }
+
+}
+</pre>
+
+                </div>
+            </div>
+
+
+            <p>Our command handler will now use an injected Clock as follows: </p>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+class MarkInvoiceAsPayedCommandHandler implements CommandHandler
+{
+    private $invoiceRepository;
+    private $clock;
+
+    public function __construct(InvoiceRepository $invoiceRepository, Clock $clock)
+    {
+        $this->invoiceRepository = $invoiceRepository;
+        $this->clock = $clock;
+    }
+
+    public function handle(MarkInvoiceAsPayed $command)
+    {
+        $invoice = $this->invoiceRepository->find($command->getInvoiceId());
+        $invoice->markAsPayed($this->clock->getCurrentDateTime());
+    }
+
+}
+</pre>
+                </div>
+            </div>
+
+            <p>making it testable by injecting a <code>FrozenClock</code> and asserting that the time recorded in the
+                entity is the same as the time one the <code>FrozenClock</code></p>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+class MarkInvoiceAsPayedCommandHandlerTest
+{
+
+    public function test_should_handle_a_MarkInvoiceAsPayed_command()
+    {
+        // given
+        $invoiceRepository = new InvoiceRepository();
+        $frozenClock = new FrozenClock('2016-08-19 10:00:00');
+        $commandHandler = new MarkInvoiceAsPayedCommandHandler($invoiceRepository, $frozenClock);
+
+        // when
+        $commandHandler->handle($markInvoiceAsPayed);
+
+        // then
+        $this->assertTrue($invoice->isPayed());
+        $this->assertEquals($frozenClock->getCurrentDateTime(), $invoice->getPayedOn());
+    }
+
+}
+</pre>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-12">
+
+                <div id="disqus_thread"></div>
+                <script>
+
+                    /**
+                     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+                     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables */
+                    /*
+                     var disqus_config = function () {
+                     this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+                     this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+                     };
+                     */
+                    (function() { // DON'T EDIT BELOW THIS LINE
+                        var d = document, s = d.createElement('script');
+                        s.src = '//teerlinck-net.disqus.com/embed.js';
+                        s.setAttribute('data-timestamp', +new Date());
+                        (d.head || d.body).appendChild(s);
+                    })();
+                </script>
+                <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="./js/jquery.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-82636878-1', 'auto');
+    ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>
