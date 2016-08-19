@@ -84,6 +84,8 @@
 
         <div class="col-md-12">
 
+            <h2>The 'now' problem</h2>
+
             <p>
                 Imagine that we have a command handler service <code>MarkInvoiceAsPayedCommandHandler</code> (see <a
                     href="https://en.wikipedia.org/wiki/Command_pattern">Command Pattern</a> for more information on the
@@ -128,7 +130,7 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 </li>
             </ol>
 
-            <h3>Time as a service </h3>
+            <h2>Time as a service </h2>
 
             <p>
                 An elegant and clean solution to this problem can be found in thinking of time as a service deliverable.
@@ -237,7 +239,7 @@ class MarkInvoiceAsPayedCommandHandlerTest
     {
         // given
         $invoiceRepository = new InvoiceRepository();
-        $frozenClock = new FrozenClock('2016-08-19 10:00:00');
+        $frozenClock = new FrozenClock(new DateTimeImmutable('2016-08-19 10:00:00'));
         $commandHandler = new MarkInvoiceAsPayedCommandHandler($invoiceRepository, $frozenClock);
 
         // when
@@ -253,6 +255,45 @@ class MarkInvoiceAsPayedCommandHandlerTest
                 </div>
             </div>
 
+            <h2>Moving things forward</h2>
+
+            <p>
+                <img align="right" alt="frozen clock" src="../img/frozen_clock.jpeg">
+                But it doesn't stop there. The power of this solution stretches out even further. Now that we can
+                manipulate time in a test, we can use this power to test for (state) changes that should happen in the
+                future.
+                To apply this to our invoice example, we will introduce the concept of an overdue invoice. An invoice is
+                overdue when it has not been payed for 30 days. By adding a few time manipulation setters to our <code>FrozenClock</code>,
+                we can now time travel as if we had our own DeLorean.
+            </p>
+
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre>
+
+    public function test_should_throw_when_invoice_is_overdue()
+    {
+        // given
+        $frozenClock = new FrozenClock(new DateTimeImmutable('2016-08-19 10:00:00'));
+        $invoice = Invoice::createOn($frozenClock->getCurrentDateTime());
+        $invoiceRepository = new InvoiceRepository();
+        $invoiceRepository->add($invoice);
+        $commandHandler = new MarkInvoiceAsPayedCommandHandler($invoiceRepository, $frozenClock);
+
+        // when
+        $frozenClock->freezeOn(new DateTimeImmutable('2016-09-20 10:00:00'));
+        $commandHandler->handle($markInvoiceAsPayed);
+
+        // then
+        $this->setExpectedException(InvoiceIsOverdue::class);
+    }
+
+</pre>
+                </div>
+            </div>
+
         </div>
 
         <div class="row">
@@ -262,23 +303,15 @@ class MarkInvoiceAsPayedCommandHandlerTest
                 <div id="disqus_thread"></div>
                 <script>
 
-                    /**
-                     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-                     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables */
-                    /*
-                     var disqus_config = function () {
-                     this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-                     this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-                     };
-                     */
-                    (function() { // DON'T EDIT BELOW THIS LINE
+                    (function () { // DON'T EDIT BELOW THIS LINE
                         var d = document, s = d.createElement('script');
                         s.src = '//teerlinck-net.disqus.com/embed.js';
                         s.setAttribute('data-timestamp', +new Date());
                         (d.head || d.body).appendChild(s);
                     })();
                 </script>
-                <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+                <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments
+                    powered by Disqus.</a></noscript>
 
 
             </div>
