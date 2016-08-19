@@ -19,6 +19,8 @@
     <!-- Custom styles for this template -->
     <link href="/css/theme.css" rel="stylesheet">
 
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/default.min.css">
+
 </head>
 
 <body>
@@ -67,7 +69,7 @@
         <div class="col-md-9">
 
             <p class="lead">
-                When writing good and meaningful unit tests, we often run against a recurring problem: testing that
+                When writing good and meaningful unit tests, we often run into a recurring problem: testing that
                 something has happened on a specific time or that the current time was recorded correctly. This often
                 leads to unit tests being time dependent, which can lead to a number of problems: the expected test
                 result varies according to exact moment the test is being executed on. Also the given and expected time
@@ -87,7 +89,8 @@
             <h2>The 'now' problem</h2>
 
             <p>
-                Imagine that we have a command handler service <code>MarkInvoiceAsPayedCommandHandler</code> (see <a
+                Imagine that we have a command handler service <code class="php">MarkInvoiceAsPayedCommandHandler</code>
+                (see <a
                     href="https://en.wikipedia.org/wiki/Command_pattern">Command Pattern</a> for more information on the
                 Command design pattern and command handlers) which marks an invoice as payed and registers the time
                 at which the given invoice was payed. The command handler could look like this in PHP:
@@ -96,7 +99,7 @@
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 class MarkInvoiceAsPayedCommandHandler implements CommandHandler
 {
     private $invoiceRepository;
@@ -117,7 +120,7 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 </div>
             </div>
 
-            <p>We could test this service / unit by mocking a <code>MarkInvoiceAsPayed</code> command and
+            <p>We could test this service / unit by mocking a <code class="php">MarkInvoiceAsPayed</code> command and
                 asserting that the time being stored in the invoice entity equals 'now'. The drawbacks to this approach
                 are:
             </p>
@@ -142,7 +145,7 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 <div class="col-md-10 col-md-offset-1">
 
 
-<pre>
+<pre class="code php">
 interface Clock {
 
     public function getCurrentDateTime(): DateTimeInterface;
@@ -152,11 +155,12 @@ interface Clock {
 
                 </div>
             </div>
-            <p>Which we can implement as a <code>SystemClock</code> which provides the current (server) time:</p>
+            <p>Which we can implement as a <code class="php">SystemClock</code> which provides the current (server)
+                time:</p>
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 class SystemClock implements Clock {
 
     public function getCurrentDateTime(): DateTimeInterface
@@ -169,13 +173,14 @@ class SystemClock implements Clock {
                 </div>
             </div>
 
-            <p>But also as a <code>FrozenClock</code> which we can use to mock a certain moment in time for testing
+            <p>But also as a <code class="php">FrozenClock</code> which we can use to mock a certain moment in time for
+                testing
                 purposes:</p>
 
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 class FrozenClock implements Clock {
 
     private $frozenOn;
@@ -202,7 +207,7 @@ class FrozenClock implements Clock {
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 class MarkInvoiceAsPayedCommandHandler implements CommandHandler
 {
     private $invoiceRepository;
@@ -225,13 +230,14 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 </div>
             </div>
 
-            <p>making it testable by injecting a <code>FrozenClock</code> and asserting that the time recorded in the
-                entity is the same as the time one the <code>FrozenClock</code></p>
+            <p>making it testable by injecting a <code class="php">FrozenClock</code> and asserting that the time
+                recorded in the
+                entity is the same as the time one the <code class="php">FrozenClock</code></p>
 
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 class MarkInvoiceAsPayedCommandHandlerTest
 {
 
@@ -263,7 +269,8 @@ class MarkInvoiceAsPayedCommandHandlerTest
                 manipulate time in a test, we can use this power to test for (state) changes that should happen in the
                 future.
                 To apply this to our invoice example, we will introduce the concept of an overdue invoice. An invoice is
-                overdue when it has not been payed for 30 days. By adding a few time manipulation setters to our <code>FrozenClock</code>,
+                overdue when it has not been payed for 30 days. By adding a few time manipulation setters to our <code
+                    class="php">FrozenClock</code>,
                 we can now time travel as if we had our own DeLorean.
             </p>
 
@@ -271,7 +278,7 @@ class MarkInvoiceAsPayedCommandHandlerTest
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
-            <pre>
+            <pre class="code php">
 
     public function test_should_throw_when_invoice_is_overdue()
     {
@@ -344,6 +351,14 @@ class MarkInvoiceAsPayedCommandHandlerTest
     ga('create', 'UA-82636878-1', 'auto');
     ga('send', 'pageview');
 
+</script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+<script>
+
+    $('pre.code').each(function (i, block) {
+        hljs.highlightBlock(block);
+    });
 </script>
 
 </body>
