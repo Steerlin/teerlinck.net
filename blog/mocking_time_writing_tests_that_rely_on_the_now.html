@@ -71,9 +71,9 @@
             <p class="lead">
                 When writing good and meaningful unit tests, we often run into a recurring problem: testing that
                 something has happened on a specific time or that the current time was recorded correctly. This often
-                leads to unit tests being time dependent, which can lead to a number of problems: the expected test
-                result varies according to exact moment the test is being executed on. Also the given and expected time
-                might show a minor (one or more milliseconds) difference due to test execution time.
+                leads to unit tests being time dependent. This approach has some drawbacks: the expected test
+                result varies according to the exact moment the test is being executed on. Also the given and expected
+                recorded time might show a minor (one or more milliseconds) difference due to test execution time.
             </p>
 
         </div>
@@ -136,9 +136,9 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
             <h2>Time as a service </h2>
 
             <p>
-                An elegant and clean solution to this problem can be found in thinking of time as a service deliverable.
-                And what provides time in our world ? Right: clocks. A Clock can be a service which we can inject and
-                consult to provide ous with the current time - or any given time that we mock for testing puposes.
+                An elegant and clean solution to this problem can be found when thinking of time as a service deliverable.
+                And what provides time in our world ? Right: clocks. A <code>Clock</code> can be a service which we can inject and
+                consult to provide the current time - or any given time that we mock for testing purposes.
             </p>
 
             <div class="row">
