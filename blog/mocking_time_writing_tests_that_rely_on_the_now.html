@@ -187,7 +187,7 @@ class FrozenClock implements Clock {
 
     public function __construct(DateTimeInterface $frozenOn)
     {
-        $this->frozenOn = $frozenOn
+        $this->frozenOn = $frozenOn;
     }
 
     public function getCurrentDateTime(): DateTimeInterface
@@ -284,7 +284,7 @@ class FrozenClock implements Clock {
 
     public function freezeOn(DateTimeInterface $frozenOn)
     {
-        $this->frozenOn = $frozenOn
+        $this->frozenOn = $frozenOn;
     }
 
 }
