@@ -274,6 +274,25 @@ class MarkInvoiceAsPayedCommandHandlerTest
                 we can now time travel as if we had our own DeLorean.
             </p>
 
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+
+            <pre class="code php">
+class FrozenClock implements Clock {
+
+    ...
+
+    public function freezeOn(DateTimeInterface $frozenOn)
+    {
+        $this->frozenOn = $frozenOn
+    }
+
+}
+</pre>
+
+                </div>
+            </div>
+
 
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
