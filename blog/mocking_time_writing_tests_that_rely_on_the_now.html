@@ -89,18 +89,18 @@
             <h2>The 'now' problem</h2>
 
             <p>
-                Imagine that we have a command handler service <code class="php">MarkInvoiceAsPayedCommandHandler</code>
+                Imagine that we have a command handler service <code class="php">MarkInvoiceAsPaidCommandHandler</code>
                 (see <a
                     href="https://en.wikipedia.org/wiki/Command_pattern">Command Pattern</a> for more information on the
-                Command design pattern and command handlers) which marks an invoice as payed and registers the time
-                at which the given invoice was payed. The command handler could look like this in PHP:
+                Command design pattern and command handlers) which marks an invoice as paid and registers the time
+                at which the given invoice was paid. The command handler could look like this in PHP:
             </p>
 
             <div class="row">
                 <div class="col-md-10 col-md-offset-1">
 
             <pre class="code php">
-class MarkInvoiceAsPayedCommandHandler implements CommandHandler
+class MarkInvoiceAsPaidCommandHandler implements CommandHandler
 {
     private $invoiceRepository;
 
@@ -109,10 +109,10 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
         $this->invoiceRepository = $invoiceRepository;
     }
 
-    public function handle(MarkInvoiceAsPayed $command)
+    public function handle(MarkInvoiceAsPaid $command)
     {
         $invoice = $this->invoiceRepository->find($command->getInvoiceId());
-        $invoice->markAsPayed(new DateTimeImmutable('now'));
+        $invoice->markAsPaid(new DateTimeImmutable('now'));
     }
 
 }
@@ -120,7 +120,7 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 </div>
             </div>
 
-            <p>We could test this service / unit by mocking a <code class="php">MarkInvoiceAsPayed</code> command and
+            <p>We could test this service / unit by mocking a <code class="php">MarkInvoiceAsPaid</code> command and
                 asserting that the time being stored in the invoice entity equals 'now'. The drawbacks to this approach
                 are:
             </p>
@@ -209,7 +209,7 @@ class FrozenClock implements Clock {
                 <div class="col-md-10 col-md-offset-1">
 
             <pre class="code php">
-class MarkInvoiceAsPayedCommandHandler implements CommandHandler
+class MarkInvoiceAsPaidCommandHandler implements CommandHandler
 {
     private $invoiceRepository;
     private $clock;
@@ -220,10 +220,10 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
         $this->clock = $clock;
     }
 
-    public function handle(MarkInvoiceAsPayed $command)
+    public function handle(MarkInvoiceAsPaid $command)
     {
         $invoice = $this->invoiceRepository->find($command->getInvoiceId());
-        $invoice->markAsPayed($this->clock->getCurrentDateTime());
+        $invoice->markAsPaid($this->clock->getCurrentDateTime());
     }
 
 }
@@ -239,22 +239,22 @@ class MarkInvoiceAsPayedCommandHandler implements CommandHandler
                 <div class="col-md-10 col-md-offset-1">
 
             <pre class="code php">
-class MarkInvoiceAsPayedCommandHandlerTest
+class MarkInvoiceAsPaidCommandHandlerTest
 {
 
-    public function test_should_handle_a_MarkInvoiceAsPayed_command()
+    public function test_should_handle_a_MarkInvoiceAsPaid_command()
     {
         // given
         $invoiceRepository = new InvoiceRepository();
         $frozenClock = new FrozenClock(new DateTimeImmutable('2016-08-19 10:00:00'));
-        $commandHandler = new MarkInvoiceAsPayedCommandHandler($invoiceRepository, $frozenClock);
+        $commandHandler = new MarkInvoiceAsPaidCommandHandler($invoiceRepository, $frozenClock);
 
         // when
-        $commandHandler->handle($markInvoiceAsPayed);
+        $commandHandler->handle($markInvoiceAsPaid);
 
         // then
-        $this->assertTrue($invoice->isPayed());
-        $this->assertEquals($frozenClock->getCurrentDateTime(), $invoice->getPayedOn());
+        $this->assertTrue($invoice->isPaid());
+        $this->assertEquals($frozenClock->getCurrentDateTime(), $invoice->getPaidOn());
     }
 
 }
@@ -270,7 +270,7 @@ class MarkInvoiceAsPayedCommandHandlerTest
                 manipulate time in a test, we can use this power to test for (state) changes that should happen in the
                 future.
                 To apply this to our invoice example, we will introduce the concept of an overdue invoice. An invoice is
-                overdue when it has not been payed for 30 days. By adding a few time manipulation setters to our <code
+                overdue when it has not been paid for 30 days. By adding a few time manipulation setters to our <code
                     class="php">FrozenClock</code>,
                 we can now time travel as if we had our own DeLorean.
             </p>
@@ -307,11 +307,11 @@ class FrozenClock implements Clock {
         $invoice = Invoice::createOn($frozenClock->getCurrentDateTime());
         $invoiceRepository = new InvoiceRepository();
         $invoiceRepository->add($invoice);
-        $commandHandler = new MarkInvoiceAsPayedCommandHandler($invoiceRepository, $frozenClock);
+        $commandHandler = new MarkInvoiceAsPaidCommandHandler($invoiceRepository, $frozenClock);
 
         // when
         $frozenClock->freezeOn(new DateTimeImmutable('2016-09-20 10:00:00'));
-        $commandHandler->handle($markInvoiceAsPayed);
+        $commandHandler->handle($markInvoiceAsPaid);
 
         // then
         $this->setExpectedException(InvoiceIsOverdue::class);
